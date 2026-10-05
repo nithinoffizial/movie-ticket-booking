@@ -1,0 +1,42 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: movie-ticket-booking-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: movie_ticket_booking
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    image: movie-ticket-booking-backend:latest
+    container_name: movie-ticket-booking-backend
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/movie_ticket_booking"
+      SPRING_DATASOURCE_USERNAME: root
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    image: movie-ticket-booking-frontend:latest
+    container_name: movie-ticket-booking-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
