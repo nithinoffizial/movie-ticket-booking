@@ -18,7 +18,7 @@ services:
       retries: 20
 
   backend:
-    image: louiejainithin/movie-ticket-booking-backend:latest
+    image: mjayashree08/movie-ticket-booking-backend:latest
     container_name: movie-ticket-booking-backend
     environment:
       DB_PASSWORD: ${DB_PASSWORD}
@@ -31,7 +31,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: louiejainithin/movie-ticket-booking-frontend:latest
+    image: mjayashree08/movie-ticket-booking-frontend:latest
     container_name: movie-ticket-booking-frontend
     ports:
       - "5173:80"
