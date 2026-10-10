@@ -1,9 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Film, Ticket, ShieldCheck, Heart } from 'lucide-react';
+import { Film, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../api/axios';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const Footer = () => {
+  const { isAuthenticated, isAdmin } = useAuth();
+
   return (
     <footer className="site-footer">
       <div className="footer-inner">
@@ -37,14 +42,39 @@ const Footer = () => {
           </ul>
         </div>
 
-        {/* Management */}
+        {/* Role-Aware Section */}
         <div className="footer-col">
-          <h4 className="footer-heading">Management</h4>
-          <ul className="footer-links">
-            <li><Link to="/bookings" className="footer-link">Booking Records</Link></li>
-            <li><Link to="/customers" className="footer-link">Registered Customers</Link></li>
-            <li><Link to="/movies" className="footer-link">Explore Genres</Link></li>
-          </ul>
+          {isAuthenticated && isAdmin ? (
+            <>
+              <h4 className="footer-heading">Administration</h4>
+              <ul className="footer-links">
+                <li><Link to="/admin" className="footer-link">Admin Dashboard</Link></li>
+                <li><Link to="/bookings" className="footer-link">Booking Records</Link></li>
+                <li><Link to="/customers" className="footer-link">Registered Customers</Link></li>
+                <li><Link to="/admin/support" className="footer-link">Support Desk</Link></li>
+              </ul>
+            </>
+          ) : isAuthenticated ? (
+            <>
+              <h4 className="footer-heading">My CinePass</h4>
+              <ul className="footer-links">
+                <li><Link to="/my-bookings" className="footer-link">My Bookings</Link></li>
+                <li><Link to="/my-tickets" className="footer-link">My Tickets</Link></li>
+                <li><Link to="/profile" className="footer-link">My Profile</Link></li>
+                <li><Link to="/support" className="footer-link">Customer Support</Link></li>
+              </ul>
+            </>
+          ) : (
+            <>
+              <h4 className="footer-heading">Quick Links</h4>
+              <ul className="footer-links">
+                <li><Link to="/movies" className="footer-link">Explore Movies</Link></li>
+                <li><Link to="/theatres" className="footer-link">Find Theatres</Link></li>
+                <li><Link to="/login" className="footer-link">Sign In</Link></li>
+                <li><Link to="/support" className="footer-link">Customer Support</Link></li>
+              </ul>
+            </>
+          )}
         </div>
 
         {/* Experience & Security */}
@@ -62,7 +92,7 @@ const Footer = () => {
 
       <div className="footer-bottom">
         <div>
-          © {new Date().getFullYear()} CinePass Movie Ticketing System. Crafted for high performance.
+          © {CURRENT_YEAR} CinePass Movie Ticketing System. Crafted for high performance.
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
           <span>Powered by React, Vite & Spring Boot</span>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Ticket, Film, Calendar, Clock, MapPin, User, Armchair, QrCode } from 'lucide-react';
+import { Ticket, Film, Calendar, MapPin, User, Armchair } from 'lucide-react';
 
 const BookingCard = ({ booking }) => {
   if (!booking) return null;
@@ -150,11 +150,11 @@ const BookingCard = ({ booking }) => {
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem',
-              background: 'rgba(255, 255, 255, 0.08)',
+              background: 'var(--border-subtle)',
               padding: '0.35rem 0.75rem',
               borderRadius: 'var(--radius-sm)',
               fontSize: '0.88rem',
-              color: '#ffffff',
+              color: 'var(--text-primary)',
             }}
           >
             <Armchair size={16} color="var(--accent-gold)" />

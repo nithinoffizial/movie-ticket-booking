@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Ticket, Film, Calendar, Clock, MapPin, User, Armchair, ArrowRight, Printer } from 'lucide-react';
+import { CheckCircle2, Armchair, ArrowRight, Printer } from 'lucide-react';
 import Modal from '../common/Modal';
 
 const BookingConfirmationModal = ({ isOpen, onClose, booking }) => {
@@ -12,7 +12,6 @@ const BookingConfirmationModal = ({ isOpen, onClose, booking }) => {
     show,
     seatsBooked,
     totalAmount,
-    bookingDate,
   } = booking;
 
   const movie = show?.movie;
@@ -68,7 +67,7 @@ const BookingConfirmationModal = ({ isOpen, onClose, booking }) => {
         >
           <CheckCircle2 size={36} />
         </div>
-        <h2 style={{ fontSize: '1.5rem', color: '#ffffff', marginBottom: '0.25rem' }}>
+        <h2 style={{ fontSize: '1.5rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
           Booking Confirmed!
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
@@ -79,21 +78,21 @@ const BookingConfirmationModal = ({ isOpen, onClose, booking }) => {
       {/* Ticket Pass View */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #1b233a 0%, #111728 100%)',
+          background: 'var(--ticket-bg)',
           borderRadius: 'var(--radius-lg)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          border: '1px solid var(--border-subtle)',
           padding: '1.5rem',
           position: 'relative',
           overflow: 'hidden',
           marginBottom: '1.5rem',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px dashed rgba(255, 255, 255, 0.15)', paddingBottom: '0.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px dashed var(--border-subtle)', paddingBottom: '0.75rem' }}>
           <div>
             <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--accent-red)', fontWeight: 700, letterSpacing: '0.05em' }}>
               RESERVATION PASS
             </span>
-            <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', fontWeight: 800, color: '#ffffff' }}>
+            <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
               Booking #{bookingId}
             </div>
           </div>
@@ -103,7 +102,7 @@ const BookingConfirmationModal = ({ isOpen, onClose, booking }) => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Movie</span>
-            <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '1.05rem', marginTop: '0.15rem' }}>
+            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.05rem', marginTop: '0.15rem' }}>
               {movie?.title || 'Movie'}
             </div>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -113,7 +112,7 @@ const BookingConfirmationModal = ({ isOpen, onClose, booking }) => {
 
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Theatre</span>
-            <div style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.98rem', marginTop: '0.15rem' }}>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.98rem', marginTop: '0.15rem' }}>
               {theatre?.name}
             </div>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -123,7 +122,7 @@ const BookingConfirmationModal = ({ isOpen, onClose, booking }) => {
 
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Date & Showtime</span>
-            <div style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.95rem', marginTop: '0.15rem' }}>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem', marginTop: '0.15rem' }}>
               {formatShowDate(show?.showDate)}
             </div>
             <span style={{ fontSize: '0.82rem', color: 'var(--accent-gold)' }}>
@@ -133,7 +132,7 @@ const BookingConfirmationModal = ({ isOpen, onClose, booking }) => {
 
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Customer</span>
-            <div style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.95rem', marginTop: '0.15rem' }}>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem', marginTop: '0.15rem' }}>
               {customer?.name}
             </div>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -144,13 +143,13 @@ const BookingConfirmationModal = ({ isOpen, onClose, booking }) => {
 
         <div
           style={{
-            background: 'rgba(0, 0, 0, 0.3)',
+            background: 'var(--bg-secondary)',
             borderRadius: 'var(--radius-md)',
             padding: '1rem',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            border: '1px solid rgba(255, 255, 255, 0.05)',
+            border: '1px solid var(--border-subtle)',
           }}
         >
           <div>
@@ -163,7 +162,7 @@ const BookingConfirmationModal = ({ isOpen, onClose, booking }) => {
 
           <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Authorized Total Amount</span>
-            <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.45rem', fontWeight: 800, color: '#ffffff' }}>
+            <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.45rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
               ₹{Number(totalAmount).toFixed(2)}
             </div>
           </div>

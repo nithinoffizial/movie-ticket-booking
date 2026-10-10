@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Ticket, Search, Calendar, Armchair, DollarSign, RefreshCw, Film, User, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Ticket, Search, Armchair, RefreshCw } from 'lucide-react';
 import bookingService from '../services/bookingService';
 import BookingCard from '../components/bookings/BookingCard';
 import LoadingState from '../components/common/LoadingState';
@@ -13,7 +13,7 @@ const Bookings = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -28,10 +28,31 @@ const Bookings = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchBookings();
+    let active = true;
+    bookingService.getAllBookings()
+      .then((data) => {
+        if (active) setBookings(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        if (active) {
+          console.error('Error fetching bookings:', err);
+          setError({
+            message: err.message || 'Unable to retrieve booking records from database.',
+            endpoint: 'GET /bookings',
+          });
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Compute aggregated stats
@@ -93,7 +114,7 @@ const Bookings = () => {
             </span>
             <Ticket size={18} color="var(--accent-red)" />
           </div>
-          <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', fontWeight: 800, color: '#ffffff', marginTop: '0.35rem' }}>
+          <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.35rem' }}>
             {stats.totalCount}
           </div>
         </div>
@@ -105,7 +126,7 @@ const Bookings = () => {
             </span>
             <Armchair size={18} color="var(--accent-gold)" />
           </div>
-          <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', fontWeight: 800, color: '#ffffff', marginTop: '0.35rem' }}>
+          <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.35rem' }}>
             {stats.totalSeats}
           </div>
         </div>
@@ -168,8 +189,8 @@ const Bookings = () => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
-            gap: '1.75rem',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+            gap: '1.5rem',
           }}
         >
           {filteredBookings.map((booking) => (

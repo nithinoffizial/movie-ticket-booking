@@ -18,10 +18,12 @@ services:
       retries: 20
 
   backend:
+    build: ./movie-ticket-booking-backend
     image: louiejainithin/movie-ticket-booking-backend:latest
     container_name: movie-ticket-booking-backend
     environment:
       DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/movie_ticket_booking"
       SPRING_DATASOURCE_USERNAME: root
     ports:
@@ -31,6 +33,7 @@ services:
         condition: service_healthy
 
   frontend:
+    build: ./movie-ticket-booking-frontend
     image: louiejainithin/movie-ticket-booking-frontend:latest
     container_name: movie-ticket-booking-frontend
     ports:

@@ -1,33 +1,34 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Search, Plus, RefreshCw, UserCheck, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Users, Search, Plus, RefreshCw, UserCheck, UserX, AlertTriangle } from 'lucide-react';
 import customerService from '../services/customerService';
-import CustomerCard from '../components/customers/CustomerCard';
 import CustomerModal from '../components/customers/CustomerModal';
 import Modal from '../components/common/Modal';
 import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 const Customers = () => {
+  const { user } = useAuth();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Modal State
+  // Modal State for Create/Edit
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Delete Confirmation State
-  const [customerToDelete, setCustomerToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  // Status Change / Deactivate State
+  const [customerToDeactivate, setCustomerToDeactivate] = useState(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const { addToast } = useToast();
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -42,10 +43,31 @@ const Customers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchCustomers();
+    let active = true;
+    customerService.getAllCustomers()
+      .then((data) => {
+        if (active) setCustomers(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        if (active) {
+          console.error('Error fetching customers:', err);
+          setError({
+            message: err.message || 'Unable to retrieve customers from database.',
+            endpoint: 'GET /customers',
+          });
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const filteredCustomers = useMemo(() => {
@@ -66,25 +88,17 @@ const Customers = () => {
     setIsModalOpen(true);
   };
 
-  // Open Edit Modal
-  const handleOpenEdit = (customer) => {
-    setEditingCustomer(customer);
-    setIsModalOpen(true);
-  };
-
   // Handle Save (Create or Update)
   const handleSaveCustomer = async (formData) => {
     setIsSubmitting(true);
     try {
       if (editingCustomer) {
-        // PUT /customers/{id}
         const updated = await customerService.updateCustomer(editingCustomer.customerId, formData);
         addToast(`Customer "${formData.name}" updated successfully!`, 'success');
         setCustomers((prev) =>
           prev.map((c) => (c.customerId === editingCustomer.customerId ? updated : c))
         );
       } else {
-        // POST /customers
         const created = await customerService.createCustomer(formData);
         addToast(`Customer "${formData.name}" registered successfully!`, 'success');
         setCustomers((prev) => [...prev, created]);
@@ -98,23 +112,53 @@ const Customers = () => {
     }
   };
 
-  // Handle Delete Confirmation
-  const handleConfirmDelete = async () => {
-    if (!customerToDelete) return;
-    setIsDeleting(true);
+  // Toggle Customer Active/Inactive Status
+  const handleToggleCustomerStatus = async (customer) => {
+    if (customer.active !== false) {
+      // Prevent admin from deactivating their own account
+      if (
+        (user?.customerId && user.customerId === customer.customerId) ||
+        (user?.username && customer.email && user.username.toLowerCase() === customer.email.toLowerCase()) ||
+        (user?.email && customer.email && user.email.toLowerCase() === customer.email.toLowerCase())
+      ) {
+        addToast('You cannot deactivate your own administrator account.', 'error');
+        return;
+      }
+      setCustomerToDeactivate(customer);
+      return;
+    }
+
+    setIsUpdatingStatus(true);
     try {
-      await customerService.deleteCustomer(customerToDelete.customerId);
-      addToast(`Customer "${customerToDelete.name}" removed successfully!`, 'success');
-      setCustomers((prev) => prev.filter((c) => c.customerId !== customerToDelete.customerId));
-      setCustomerToDelete(null);
-    } catch (err) {
-      console.error('Error deleting customer:', err);
-      addToast(
-        err.message || 'Failed to delete customer. Note: customer may have existing bookings in the database.',
-        'error'
+      await customerService.updateCustomerStatus(customer.customerId, true);
+      addToast(`Customer "${customer.name}" reactivated successfully!`, 'success');
+      setCustomers((prev) =>
+        prev.map((c) => (c.customerId === customer.customerId ? { ...c, active: true } : c))
       );
+    } catch (err) {
+      console.error('Error activating customer:', err);
+      addToast(err.message || 'Failed to activate customer.', 'error');
     } finally {
-      setIsDeleting(false);
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // Confirm Deactivation
+  const handleConfirmDeactivation = async () => {
+    if (!customerToDeactivate) return;
+    setIsUpdatingStatus(true);
+    try {
+      await customerService.updateCustomerStatus(customerToDeactivate.customerId, false);
+      addToast(`Customer "${customerToDeactivate.name}" deactivated successfully.`, 'success');
+      setCustomers((prev) =>
+        prev.map((c) => (c.customerId === customerToDeactivate.customerId ? { ...c, active: false } : c))
+      );
+      setCustomerToDeactivate(null);
+    } catch (err) {
+      console.error('Error deactivating customer:', err);
+      addToast(err.message || 'Failed to deactivate customer.', 'error');
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -126,14 +170,14 @@ const Customers = () => {
           <span className="section-subtitle">Account Directory</span>
           <h1 className="section-title">
             <Users size={32} color="var(--accent-cyan)" />
-            <span>Customer Directory</span>
+            <span>Customer Management</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-            Manage registered patron profiles, view customer contacts, and initiate direct reservations.
+            Manage registered patron accounts, track account status, and toggle activation states.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button onClick={fetchCustomers} className="btn btn-secondary btn-sm" disabled={loading}>
             <RefreshCw size={15} className={loading ? 'spin-icon' : ''} />
             <span>Refresh</span>
@@ -186,15 +230,107 @@ const Customers = () => {
           onAction={searchTerm ? () => setSearchTerm('') : handleOpenCreate}
         />
       ) : (
-        <div className="grid-responsive">
-          {filteredCustomers.map((customer) => (
-            <CustomerCard
-              key={customer.customerId}
-              customer={customer}
-              onEdit={handleOpenEdit}
-              onDelete={(c) => setCustomerToDelete(c)}
-            />
-          ))}
+        <div
+          className="card"
+          style={{
+            background: 'var(--bg-card)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border-subtle)',
+            overflow: 'hidden',
+          }}
+        >
+          <div className="table-responsive">
+            <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <th style={{ padding: '1rem' }}>Customer</th>
+                  <th style={{ padding: '1rem' }}>Email</th>
+                  <th style={{ padding: '1rem' }}>Phone</th>
+                  <th style={{ padding: '1rem' }}>Status</th>
+                  <th style={{ padding: '1rem' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCustomers.map((c) => (
+                  <tr key={c.customerId} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                    <td style={{ padding: '1rem' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{c.name}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#38bdf8' }}>#{c.customerId}</div>
+                    </td>
+                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>
+                      {c.email}
+                    </td>
+                    <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>
+                      {c.phone || 'N/A'}
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          padding: '0.25rem 0.65rem',
+                          borderRadius: 'var(--radius-full)',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          background: c.active !== false ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                          color: c.active !== false ? 'var(--accent-emerald)' : '#f87171',
+                          border: `1px solid ${c.active !== false ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: c.active !== false ? 'var(--accent-emerald)' : '#f87171',
+                          }}
+                        />
+                        {c.active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      {c.active !== false ? (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          style={{
+                            borderColor: 'rgba(239, 68, 68, 0.4)',
+                            color: '#f87171',
+                            padding: '0.35rem 0.75rem',
+                            fontSize: '0.8rem',
+                          }}
+                          onClick={() => handleToggleCustomerStatus(c)}
+                          disabled={isUpdatingStatus}
+                        >
+                          <UserX size={14} />
+                          <span>Deactivate</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          style={{
+                            borderColor: 'rgba(16, 185, 129, 0.4)',
+                            color: 'var(--accent-emerald)',
+                            padding: '0.35rem 0.75rem',
+                            fontSize: '0.8rem',
+                          }}
+                          onClick={() => handleToggleCustomerStatus(c)}
+                          disabled={isUpdatingStatus}
+                        >
+                          <UserCheck size={14} />
+                          <span>Activate</span>
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -207,12 +343,12 @@ const Customers = () => {
         isSubmitting={isSubmitting}
       />
 
-      {/* Delete Confirmation Modal */}
+      {/* Deactivate Confirmation Modal */}
       <Modal
-        isOpen={!!customerToDelete}
-        onClose={() => setCustomerToDelete(null)}
-        title="Confirm Customer Removal"
-        maxWidth="450px"
+        isOpen={!!customerToDeactivate}
+        onClose={() => setCustomerToDeactivate(null)}
+        title="Confirm Customer Deactivation"
+        maxWidth="460px"
       >
         <div style={{ textAlign: 'center', padding: '1rem 0' }}>
           <div
@@ -230,30 +366,32 @@ const Customers = () => {
           >
             <AlertTriangle size={28} />
           </div>
-          <h4 style={{ color: '#ffffff', marginBottom: '0.5rem' }}>
-            Delete {customerToDelete?.name}?
+          <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+            Deactivate {customerToDeactivate?.name}?
           </h4>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Are you sure you want to remove customer account #{customerToDelete?.customerId}? If this customer has existing bookings in the database, foreign key constraints may prevent deletion.
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+            Are you sure you want to deactivate customer account #{customerToDeactivate?.customerId}?
+            They will be prevented from logging in and booking tickets.
+            Their existing bookings and tickets will remain intact.
           </p>
         </div>
 
-        <div className="modal-footer" style={{ padding: '1rem 0 0' }}>
+        <div className="modal-footer" style={{ padding: '1rem 0 0', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <button
             type="button"
             className="btn btn-secondary btn-sm"
-            onClick={() => setCustomerToDelete(null)}
-            disabled={isDeleting}
+            onClick={() => setCustomerToDeactivate(null)}
+            disabled={isUpdatingStatus}
           >
             Cancel
           </button>
           <button
             type="button"
             className="btn btn-danger btn-sm"
-            onClick={handleConfirmDelete}
-            disabled={isDeleting}
+            onClick={handleConfirmDeactivation}
+            disabled={isUpdatingStatus}
           >
-            {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+            {isUpdatingStatus ? 'Deactivating...' : 'Confirm Deactivate'}
           </button>
         </div>
       </Modal>

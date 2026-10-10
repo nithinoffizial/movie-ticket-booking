@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Building2, Search, Plus, MapPin, Tv, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Building2, Search, Plus } from 'lucide-react';
 import theatreService from '../services/theatreService';
 import TheatreCard from '../components/theatres/TheatreCard';
 import LoadingState from '../components/common/LoadingState';
@@ -7,8 +7,10 @@ import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
 import Modal from '../components/common/Modal';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 const Theatres = () => {
+  const { isAuthenticated, isAdmin } = useAuth();
   const [theatres, setTheatres] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,7 +26,7 @@ const Theatres = () => {
 
   const { addToast } = useToast();
 
-  const fetchTheatres = async () => {
+  const fetchTheatres = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -39,10 +41,31 @@ const Theatres = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchTheatres();
+    let active = true;
+    theatreService.getAllTheatres()
+      .then((data) => {
+        if (active) setTheatres(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        if (active) {
+          console.error('Error fetching theatres:', err);
+          setError({
+            message: err.message || 'Unable to load partner theatres.',
+            endpoint: 'GET /theatres',
+          });
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const filteredTheatres = useMemo(() => {
@@ -57,6 +80,10 @@ const Theatres = () => {
 
   const handleAddTheatre = async (e) => {
     e.preventDefault();
+    if (!isAuthenticated || !isAdmin) {
+      addToast('Administrator privileges required to register theatres.', 'error');
+      return;
+    }
     if (!newTheatreData.name.trim()) {
       addToast('Please enter the theatre name', 'error');
       return;
@@ -105,13 +132,15 @@ const Theatres = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="btn btn-primary btn-sm"
-        >
-          <Plus size={16} />
-          <span>Add New Theatre</span>
-        </button>
+        {isAuthenticated && isAdmin && (
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="btn btn-primary btn-sm"
+          >
+            <Plus size={16} />
+            <span>Add New Theatre</span>
+          </button>
+        )}
       </div>
 
       {/* Filter / Search Bar */}
@@ -159,79 +188,81 @@ const Theatres = () => {
       )}
 
       {/* Add Theatre Modal */}
-      <Modal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title="Register Partner Theatre"
-        maxWidth="500px"
-      >
-        <form onSubmit={handleAddTheatre}>
-          <div className="form-group">
-            <label className="form-label" htmlFor="theatre-name">
-              Theatre Name *
-            </label>
-            <input
-              id="theatre-name"
-              type="text"
-              className="form-input"
-              placeholder="e.g. INOX Megaplex"
-              value={newTheatreData.name}
-              onChange={(e) => setNewTheatreData({ ...newTheatreData, name: e.target.value })}
-              required
-            />
-          </div>
+      {isAuthenticated && isAdmin && (
+        <Modal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          title="Register Partner Theatre"
+          maxWidth="500px"
+        >
+          <form onSubmit={handleAddTheatre}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="theatre-name">
+                Theatre Name *
+              </label>
+              <input
+                id="theatre-name"
+                type="text"
+                className="form-input"
+                placeholder="e.g. INOX Megaplex"
+                value={newTheatreData.name}
+                onChange={(e) => setNewTheatreData({ ...newTheatreData, name: e.target.value })}
+                required
+              />
+            </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="theatre-location">
-              Location / City *
-            </label>
-            <input
-              id="theatre-location"
-              type="text"
-              className="form-input"
-              placeholder="e.g. Velachery, Chennai"
-              value={newTheatreData.location}
-              onChange={(e) => setNewTheatreData({ ...newTheatreData, location: e.target.value })}
-              required
-            />
-          </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="theatre-location">
+                Location / City *
+              </label>
+              <input
+                id="theatre-location"
+                type="text"
+                className="form-input"
+                placeholder="e.g. Velachery, Chennai"
+                value={newTheatreData.location}
+                onChange={(e) => setNewTheatreData({ ...newTheatreData, location: e.target.value })}
+                required
+              />
+            </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="theatre-screens">
-              Total Screens *
-            </label>
-            <input
-              id="theatre-screens"
-              type="number"
-              min="1"
-              max="50"
-              className="form-input"
-              placeholder="e.g. 6"
-              value={newTheatreData.totalScreens}
-              onChange={(e) => setNewTheatreData({ ...newTheatreData, totalScreens: e.target.value })}
-              required
-            />
-          </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="theatre-screens">
+                Total Screens *
+              </label>
+              <input
+                id="theatre-screens"
+                type="number"
+                min="1"
+                max="50"
+                className="form-input"
+                placeholder="e.g. 6"
+                value={newTheatreData.totalScreens}
+                onChange={(e) => setNewTheatreData({ ...newTheatreData, totalScreens: e.target.value })}
+                required
+              />
+            </div>
 
-          <div className="modal-footer" style={{ padding: '1rem 0 0', marginTop: '1.5rem' }}>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => setIsAddModalOpen(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary btn-sm"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Registering...' : 'Register Theatre'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+            <div className="modal-footer" style={{ padding: '1rem 0 0', marginTop: '1.5rem' }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setIsAddModalOpen(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary btn-sm"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Registering...' : 'Register Theatre'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };

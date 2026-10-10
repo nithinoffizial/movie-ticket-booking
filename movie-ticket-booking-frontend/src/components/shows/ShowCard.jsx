@@ -1,13 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, MapPin, Ticket, Armchair, ShieldAlert } from 'lucide-react';
+import { Calendar, Clock, MapPin, Ticket, Armchair } from 'lucide-react';
 
 const ShowCard = ({ show, onSelect = null, isSelected = false }) => {
   if (!show) return null;
 
   const {
     showId,
-    movie,
     theatre,
     showDate,
     showTime,
@@ -79,7 +78,7 @@ const ShowCard = ({ show, onSelect = null, isSelected = false }) => {
         <div className="chip-divider" />
         <div className="timing-item">
           <Clock size={15} color="var(--accent-cyan)" />
-          <span style={{ fontWeight: 700, color: '#ffffff' }}>{formatTime(showTime)}</span>
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatTime(showTime)}</span>
         </div>
       </div>
 

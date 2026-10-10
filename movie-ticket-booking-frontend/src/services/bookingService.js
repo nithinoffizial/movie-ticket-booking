@@ -1,9 +1,15 @@
 import apiClient from '../api/axios';
 
 export const bookingService = {
-  // GET /bookings
+  // GET /customer/bookings (for authenticated customer)
+  getMyBookings: async () => {
+    const response = await apiClient.get('/customer/bookings');
+    return response.data;
+  },
+
+  // GET /bookings or /admin/bookings (for admin)
   getAllBookings: async () => {
-    const response = await apiClient.get('/bookings');
+    const response = await apiClient.get('/admin/bookings');
     return response.data;
   },
 
@@ -14,21 +20,9 @@ export const bookingService = {
   },
 
   // POST /bookings
-  // Payload: { customer: { customerId: number }, show: { showId: number }, seatsBooked: number }
+  // Payload: { showId: number, seatNumbers: string[], customerId?: number }
   createBooking: async (bookingData) => {
     const response = await apiClient.post('/bookings', bookingData);
-    return response.data;
-  },
-
-  // PUT /bookings/{id}
-  updateBooking: async (id, bookingData) => {
-    const response = await apiClient.put(`/bookings/${id}`, bookingData);
-    return response.data;
-  },
-
-  // DELETE /bookings/{id}
-  deleteBooking: async (id) => {
-    const response = await apiClient.delete(`/bookings/${id}`);
     return response.data;
   },
 };

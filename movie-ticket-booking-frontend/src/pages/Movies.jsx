@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Film, Search, Filter, Plus, Sparkles, SlidersHorizontal } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Film, Search, Plus } from 'lucide-react';
 import movieService from '../services/movieService';
 import MovieCard from '../components/movies/MovieCard';
 import LoadingState from '../components/common/LoadingState';
@@ -7,8 +7,10 @@ import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
 import Modal from '../components/common/Modal';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 const Movies = () => {
+  const { isAuthenticated, isAdmin } = useAuth();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,7 +33,7 @@ const Movies = () => {
 
   const { addToast } = useToast();
 
-  const fetchMovies = async () => {
+  const fetchMovies = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -46,10 +48,31 @@ const Movies = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchMovies();
+    let active = true;
+    movieService.getAllMovies()
+      .then((data) => {
+        if (active) setMovies(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        if (active) {
+          console.error('Error fetching movies:', err);
+          setError({
+            message: err.message || 'Unable to retrieve movie listings from backend.',
+            endpoint: 'GET /movies',
+          });
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Compute unique genres and languages dynamically from real data
@@ -91,6 +114,10 @@ const Movies = () => {
   // Handle Add Movie
   const handleAddMovie = async (e) => {
     e.preventDefault();
+    if (!isAuthenticated || !isAdmin) {
+      addToast('Administrator privileges required to add movies.', 'error');
+      return;
+    }
     if (!newMovieData.title.trim()) {
       addToast('Please enter a movie title', 'error');
       return;
@@ -144,13 +171,15 @@ const Movies = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="btn btn-primary btn-sm"
-        >
-          <Plus size={16} />
-          <span>Add New Movie</span>
-        </button>
+        {isAuthenticated && isAdmin && (
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="btn btn-primary btn-sm"
+          >
+            <Plus size={16} />
+            <span>Add New Movie</span>
+          </button>
+        )}
       </div>
 
       {/* Filter and Search Bar */}
@@ -226,7 +255,11 @@ const Movies = () => {
         <EmptyState
           icon={Film}
           title="No Matching Movies"
-          message="No movies matched your current search filters. Try clearing filters or add a new movie."
+          message={
+            isAuthenticated && isAdmin
+              ? "No movies matched your current search filters. Try clearing filters or add a new movie."
+              : "No movies matched your current search filters. Try clearing filters to find movies."
+          }
           actionText="Clear Filters"
           onAction={() => {
             setSearchTerm('');
@@ -243,13 +276,14 @@ const Movies = () => {
         </div>
       )}
 
-      {/* Add Movie Modal */}
-      <Modal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title="Add Movie to Catalog"
-        maxWidth="500px"
-      >
+      {/* Add Movie Modal (Admin Only) */}
+      {isAuthenticated && isAdmin && (
+        <Modal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          title="Add Movie to Catalog"
+          maxWidth="500px"
+        >
         <form onSubmit={handleAddMovie}>
           <div className="form-group">
             <label className="form-label" htmlFor="movie-title">
@@ -332,6 +366,7 @@ const Movies = () => {
           </div>
         </form>
       </Modal>
+      )}
     </div>
   );
 };

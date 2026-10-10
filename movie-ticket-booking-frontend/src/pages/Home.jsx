@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Film, Ticket, Star, Calendar, Building2, ChevronRight, Play, Sparkles, TrendingUp, Clapperboard } from 'lucide-react';
+import { Film, Ticket, Calendar, Building2, ChevronRight, Sparkles, TrendingUp, LifeBuoy, MessageSquare } from 'lucide-react';
 import movieService from '../services/movieService';
 import theatreService from '../services/theatreService';
 import showService from '../services/showService';
@@ -19,32 +19,40 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchHomeData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [moviesRes, theatresRes, showsRes] = await Promise.all([
-        movieService.getAllMovies(),
-        theatreService.getAllTheatres(),
-        showService.getAllShows(),
-      ]);
-
-      setMovies(Array.isArray(moviesRes) ? moviesRes : []);
-      setTheatres(Array.isArray(theatresRes) ? theatresRes : []);
-      setShows(Array.isArray(showsRes) ? showsRes : []);
-    } catch (err) {
-      console.error('Failed to load home page data:', err);
-      setError({
-        message: err.message || 'Could not fetch movies, theatres, or shows from the backend.',
-        endpoint: err.endpoint || 'GET /movies, /theatres, /shows',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let active = true;
+    const fetchHomeData = async () => {
+      try {
+        const [moviesRes, theatresRes, showsRes] = await Promise.all([
+          movieService.getAllMovies(),
+          theatreService.getAllTheatres(),
+          showService.getAllShows(),
+        ]);
+
+        if (active) {
+          setMovies(Array.isArray(moviesRes) ? moviesRes : []);
+          setTheatres(Array.isArray(theatresRes) ? theatresRes : []);
+          setShows(Array.isArray(showsRes) ? showsRes : []);
+        }
+      } catch (err) {
+        if (active) {
+          console.error('Failed to load home page data:', err);
+          setError({
+            message: err.message || 'Could not fetch movies, theatres, or shows from the backend.',
+            endpoint: err.endpoint || 'GET /movies, /theatres, /shows',
+          });
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchHomeData();
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Featured Movie for Hero Backdrop
@@ -248,6 +256,54 @@ const Home = () => {
                   ))}
                 </div>
               )}
+            </section>
+
+            {/* 6. Customer Support Entry Point */}
+            <section style={{ marginBottom: '3rem' }}>
+              <div
+                className="card"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, var(--bg-card) 100%)',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: '2.5rem 2rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '2rem',
+                }}
+              >
+                <div style={{ maxWidth: '600px' }}>
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      color: 'var(--accent-cyan)',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      textTransform: 'uppercase',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    <LifeBuoy size={16} />
+                    <span>24/7 Dedicated Assistance</span>
+                  </div>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
+                    Need Help With Your Booking or Tickets?
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, margin: 0 }}>
+                    Our customer support desk is ready to resolve booking issues, payment queries, ticket verifications, and cancellations with instant status tracking.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  <Link to="/support" className="btn btn-primary btn-md">
+                    <MessageSquare size={18} />
+                    <span>Contact Support</span>
+                  </Link>
+                </div>
+              </div>
             </section>
           </>
         )}

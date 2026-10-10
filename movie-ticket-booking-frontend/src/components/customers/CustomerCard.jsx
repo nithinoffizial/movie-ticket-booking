@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, Mail, Phone, Edit, Trash2, Ticket } from 'lucide-react';
+import { Mail, Phone, Edit, Trash2, Ticket } from 'lucide-react';
 
 const CustomerCard = ({ customer, onEdit, onDelete }) => {
   if (!customer) return null;
@@ -54,7 +54,7 @@ const CustomerCard = ({ customer, onEdit, onDelete }) => {
           </div>
 
           <div>
-            <h4 style={{ color: '#ffffff', fontSize: '1.1rem', fontWeight: 700 }}>
+            <h4 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700 }}>
               {name}
             </h4>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -85,7 +85,7 @@ const CustomerCard = ({ customer, onEdit, onDelete }) => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0, 0, 0, 0.25)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
           <Mail size={15} color="var(--accent-cyan)" />
           <span style={{ wordBreak: 'break-all' }}>{email || 'No email provided'}</span>

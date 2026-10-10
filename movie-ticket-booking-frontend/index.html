@@ -1,11 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
     <title>CinePass — Premier Movie Ticket Booking</title>
     <meta name="description" content="Experience movies like never before. Browse now showing films, check showtimes, select premium seats, and book tickets instantly." />
+    <!-- Inline script to prevent theme flash: Defaults to dark for first-time visitors -->
+    <script>
+      (function() {
+        try {
+          var savedTheme = localStorage.getItem('cinepass-theme');
+          var theme = savedTheme === 'light' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', theme);
+          document.documentElement.style.colorScheme = theme;
+        } catch (e) {}
+      })();
+    </script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

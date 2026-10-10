@@ -1,14 +1,18 @@
 package com.example.movieticketbooking.controller;
 
 import com.example.movieticketbooking.entity.Customer;
+import com.example.movieticketbooking.security.CustomUserDetails;
 import com.example.movieticketbooking.service.CustomerService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/customers")
+@PreAuthorize("hasRole('ADMIN')")
 public class CustomerController {
 
     private final CustomerService customerService;
@@ -23,9 +27,7 @@ public class CustomerController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Customer> getCustomerById(
-            @PathVariable Integer id) {
-
+    public ResponseEntity<Customer> getCustomerById(@PathVariable Integer id) {
         return customerService.getCustomerById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -50,10 +52,17 @@ public class CustomerController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(
-            @PathVariable Integer id) {
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Customer> updateCustomerStatus(
+            @PathVariable Integer id,
+            @RequestParam boolean active,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        Customer updated = customerService.toggleCustomerStatus(id, active, currentUser);
+        return ResponseEntity.ok(updated);
+    }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Integer id) {
         customerService.deleteCustomer(id);
         return ResponseEntity.noContent().build();
     }

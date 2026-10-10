@@ -13,9 +13,13 @@ const apiClient = axios.create({
   timeout: 10000,
 });
 
-// Interceptor for logging requests in development
+// Interceptor for attaching auth token and logging requests
 apiClient.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -23,15 +27,25 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Interceptor for structured, user-friendly error formatting
+// Interceptor for structured, user-friendly error formatting and auth handling
 apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
+    const status = error.response?.status;
+    const message = error.response?.data?.message || error.message || 'An unexpected error occurred.';
+
+    // If unauthorized and not already on the login page, clear token and redirect
+    if (status === 401 && !window.location.pathname.includes('/login')) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login?expired=true';
+    }
+
     const errorDetails = {
-      status: error.response?.status,
-      message: error.response?.data?.message || error.message || 'An unexpected error occurred.',
+      status,
+      message,
       endpoint: `${error.config?.method?.toUpperCase()} ${error.config?.url}`,
       fullError: error,
     };

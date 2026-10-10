@@ -1,8 +1,11 @@
 package com.example.movieticketbooking.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "bookings")
@@ -13,11 +16,11 @@ public class Booking {
     @Column(name = "booking_id")
     private Integer bookingId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "show_id", nullable = false)
     private Show show;
 
@@ -30,12 +33,19 @@ public class Booking {
     @Column(name = "booking_date")
     private LocalDateTime bookingDate;
 
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<BookingSeat> bookingSeats = new ArrayList<>();
+
+    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private Ticket ticket;
+
     public Booking() {
     }
 
     public Booking(Customer customer, Show show, Integer seatsBooked,
                     Double totalAmount, LocalDateTime bookingDate) {
-
         this.customer = customer;
         this.show = show;
         this.seatsBooked = seatsBooked;
@@ -89,5 +99,21 @@ public class Booking {
 
     public void setBookingDate(LocalDateTime bookingDate) {
         this.bookingDate = bookingDate;
+    }
+
+    public List<BookingSeat> getBookingSeats() {
+        return bookingSeats;
+    }
+
+    public void setBookingSeats(List<BookingSeat> bookingSeats) {
+        this.bookingSeats = bookingSeats;
+    }
+
+    public Ticket getTicket() {
+        return ticket;
+    }
+
+    public void setTicket(Ticket ticket) {
+        this.ticket = ticket;
     }
 }

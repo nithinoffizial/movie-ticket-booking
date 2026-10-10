@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Film, Calendar, Clock, Globe, ArrowLeft, Star, MapPin, Ticket, Sparkles, Building2, Filter } from 'lucide-react';
+import { Calendar, Clock, Globe, ArrowLeft, Star, Ticket, Filter } from 'lucide-react';
 import movieService from '../services/movieService';
 import showService from '../services/showService';
 import ShowCard from '../components/shows/ShowCard';
@@ -22,7 +22,7 @@ const MovieShowSelection = () => {
   const [selectedDate, setSelectedDate] = useState('ALL');
   const [selectedTheatre, setSelectedTheatre] = useState('ALL');
 
-  const fetchMovieAndShows = async () => {
+  const fetchMovieAndShows = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -47,10 +47,38 @@ const MovieShowSelection = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
-    fetchMovieAndShows();
+    let active = true;
+    Promise.all([
+      movieService.getMovieById(id),
+      showService.getAllShows(),
+    ]).then(([movieData, allShows]) => {
+      if (active) {
+        setMovie(movieData);
+        const movieShows = (Array.isArray(allShows) ? allShows : []).filter(
+          (s) => s.movie && Number(s.movie.movieId) === Number(id)
+        );
+        setShows(movieShows);
+      }
+    }).catch((err) => {
+      if (active) {
+        console.error('Error fetching movie or shows:', err);
+        setError({
+          message: err.message || `Unable to load movie details for ID #${id}`,
+          endpoint: `GET /movies/${id} and /shows`,
+        });
+      }
+    }).finally(() => {
+      if (active) {
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   // Unique dates and theatres for filter pills
@@ -150,11 +178,11 @@ const MovieShowSelection = () => {
             left: 0,
             width: '100%',
             height: '100%',
-            background: 'linear-gradient(180deg, rgba(12, 16, 27, 0.7) 0%, rgba(12, 16, 27, 0.98) 100%)',
+            background: 'linear-gradient(180deg, var(--bg-glass) 0%, var(--bg-primary) 100%)',
           }}
         />
 
-        <div className="page-wrapper" style={{ position: 'relative', zIndex: 5, padding: '0' }}>
+        <div className="page-wrapper" style={{ position: 'relative', zIndex: 5, padding: 'clamp(1.25rem, 3.5vw, 2.5rem) clamp(0.85rem, 3vw, 1.75rem)' }}>
           <Link
             to="/movies"
             className="btn btn-secondary btn-sm"
@@ -164,22 +192,17 @@ const MovieShowSelection = () => {
             <span>Back to All Movies</span>
           </Link>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'minmax(240px, 280px) 1fr',
-              gap: '2.5rem',
-              alignItems: 'start',
-            }}
-          >
+          <div className="movie-detail-hero">
             {/* Poster Card */}
             <div
+              className="movie-detail-poster-wrap"
               style={{
                 borderRadius: 'var(--radius-lg)',
                 overflow: 'hidden',
-                boxShadow: '0 16px 36px rgba(0, 0, 0, 0.7)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                boxShadow: 'var(--shadow-lg)',
+                border: '1px solid var(--border-subtle)',
                 aspectRatio: '2/3',
+                width: '100%',
               }}
             >
               <img
@@ -190,7 +213,7 @@ const MovieShowSelection = () => {
             </div>
 
             {/* Movie Description */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <span className="badge badge-red">{movie.genre}</span>
                 <span className="badge badge-gold">
@@ -200,11 +223,11 @@ const MovieShowSelection = () => {
                 <span className="badge badge-subtle">{movie.language}</span>
               </div>
 
-              <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', color: '#ffffff', lineHeight: 1.15 }}>
+              <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', color: 'var(--text-primary)', lineHeight: 1.15, overflowWrap: 'break-word' }}>
                 {movie.title}
               </h1>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.95rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <Clock size={16} color="var(--accent-red)" />
                   <span>{movie.durationMinutes} Minutes</span>
@@ -223,12 +246,12 @@ const MovieShowSelection = () => {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
                   gap: '1rem',
                   padding: '1rem 1.25rem',
-                  background: 'rgba(0, 0, 0, 0.35)',
+                  background: 'var(--bg-card)',
                   borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  border: '1px solid var(--border-subtle)',
                   maxWidth: '720px',
                 }}
               >
@@ -236,7 +259,7 @@ const MovieShowSelection = () => {
                   <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-dim)' }}>
                     Director
                   </span>
-                  <div style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.92rem' }}>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.92rem' }}>
                     {visuals.director}
                   </div>
                 </div>
@@ -244,7 +267,7 @@ const MovieShowSelection = () => {
                   <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-dim)' }}>
                     Starring Cast
                   </span>
-                  <div style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.92rem' }}>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.92rem' }}>
                     {visuals.stars}
                   </div>
                 </div>
@@ -254,9 +277,9 @@ const MovieShowSelection = () => {
                 <Link
                   to={`/booking?movieId=${movie.movieId}`}
                   className="btn btn-primary btn-md"
-                  style={{ display: 'inline-flex' }}
+                  style={{ display: 'inline-flex', maxWidth: '100%', whiteSpace: 'normal', lineHeight: 1.35 }}
                 >
-                  <Ticket size={18} />
+                  <Ticket size={18} style={{ flexShrink: 0 }} />
                   <span>Book Tickets for {movie.title}</span>
                 </Link>
               </div>
@@ -353,7 +376,7 @@ const MovieShowSelection = () => {
                 key={show.showId}
                 show={show}
                 onSelect={(selectedShow) => {
-                  navigate(`/booking?showId=${selectedShow.showId}`);
+                  navigate(`/shows/${selectedShow.showId}/seats`);
                 }}
               />
             ))}

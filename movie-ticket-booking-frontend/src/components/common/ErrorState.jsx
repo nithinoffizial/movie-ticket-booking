@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, RefreshCw, ServerCrash } from 'lucide-react';
+import { RefreshCw, ServerCrash } from 'lucide-react';
 
 const ErrorState = ({
   title = 'Unable to Load Data',
@@ -40,7 +40,7 @@ const ErrorState = ({
       </div>
 
       <div>
-        <h4 style={{ color: '#ffffff', marginBottom: '0.35rem' }}>{title}</h4>
+        <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.35rem' }}>{title}</h4>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '420px' }}>
           {message}
         </p>

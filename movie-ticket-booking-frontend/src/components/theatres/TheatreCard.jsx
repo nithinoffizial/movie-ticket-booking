@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, MapPin, Tv, Sparkles, Ticket } from 'lucide-react';
+import { Building2, MapPin, Tv, Ticket } from 'lucide-react';
 
 const TheatreCard = ({ theatre }) => {
   if (!theatre) return null;
@@ -20,7 +20,7 @@ const TheatreCard = ({ theatre }) => {
       </div>
 
       <div className="theatre-details">
-        <h3 style={{ fontSize: '1.25rem', color: '#ffffff', fontWeight: 700 }}>
+        <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', fontWeight: 700 }}>
           {name}
         </h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>

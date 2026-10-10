@@ -24,6 +24,11 @@ dist/
 .env.*
 application-local.properties
 
+# Database backups and dumps (keep docker init and migration scripts trackable)
+*.sql
+!docker/mysql/init.sql
+!docker/mysql/migration_*.sql
+
 # OS
 .DS_Store
 Thumbs.db

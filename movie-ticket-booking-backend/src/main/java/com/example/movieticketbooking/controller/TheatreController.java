@@ -3,6 +3,7 @@ package com.example.movieticketbooking.controller;
 import com.example.movieticketbooking.entity.Theatre;
 import com.example.movieticketbooking.service.TheatreService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,11 +31,13 @@ public class TheatreController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Theatre createTheatre(@RequestBody Theatre theatre) {
         return theatreService.createTheatre(theatre);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Theatre> updateTheatre(
             @PathVariable Integer id,
             @RequestBody Theatre theatre) {
@@ -49,6 +52,7 @@ public class TheatreController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteTheatre(@PathVariable Integer id) {
         theatreService.deleteTheatre(id);
         return ResponseEntity.noContent().build();

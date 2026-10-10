@@ -1,5 +1,5 @@
 import React from 'react';
-import { Film, Clapperboard } from 'lucide-react';
+import { Clapperboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const EmptyState = ({

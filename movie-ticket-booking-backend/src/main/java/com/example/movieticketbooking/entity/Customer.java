@@ -20,6 +20,9 @@ public class Customer {
     @Column(length = 15)
     private String phone;
 
+    @Column(nullable = false)
+    private Boolean active = true;
+
     public Customer() {
     }
 
@@ -27,6 +30,14 @@ public class Customer {
         this.name = name;
         this.email = email;
         this.phone = phone;
+        this.active = true;
+    }
+
+    public Customer(String name, String email, String phone, Boolean active) {
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.active = active != null ? active : true;
     }
 
     public Integer getCustomerId() {
@@ -59,5 +70,13 @@ public class Customer {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public Boolean getActive() {
+        return active != null ? active : true;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 }

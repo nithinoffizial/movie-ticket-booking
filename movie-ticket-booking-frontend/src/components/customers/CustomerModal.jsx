@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Loader2, Save } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, Save } from 'lucide-react';
 import Modal from '../common/Modal';
 
 const CustomerModal = ({ isOpen, onClose, onSave, initialData = null, isSubmitting = false }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-  });
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [formData, setFormData] = useState(() => (initialData ? {
+    name: initialData.name || '',
+    email: initialData.email || '',
+    phone: initialData.phone || '',
+  } : { name: '', email: '', phone: '' }));
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || '',
-        email: initialData.email || '',
-        phone: initialData.phone || '',
-      });
-    } else {
-      setFormData({ name: '', email: '', phone: '' });
-    }
+  if (initialData !== prevInitialData || isOpen !== prevIsOpen) {
+    setPrevInitialData(initialData);
+    setPrevIsOpen(isOpen);
+    setFormData(initialData ? {
+      name: initialData.name || '',
+      email: initialData.email || '',
+      phone: initialData.phone || '',
+    } : { name: '', email: '', phone: '' });
     setErrors({});
-  }, [initialData, isOpen]);
+  }
 
   const validate = () => {
     const newErrors = {};

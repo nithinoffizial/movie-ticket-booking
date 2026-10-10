@@ -2,17 +2,20 @@ package com.example.movieticketbooking.repository;
 
 import com.example.movieticketbooking.entity.Booking;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.query.Procedure;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
+@Repository
 public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
-    @Procedure(procedureName = "book_ticket")
-    void bookTicket(
-            @Param("p_customer_id") Integer customerId,
-            @Param("p_show_id") Integer showId,
-            @Param("p_seats_booked") Integer seatsBooked
-    );
+    List<Booking> findByCustomerCustomerIdOrderByBookingDateDesc(Integer customerId);
+
+    List<Booking> findAllByOrderByBookingDateDesc();
 
     Booking findTopByOrderByBookingIdDesc();
+
+    @Query("SELECT COALESCE(SUM(b.totalAmount), 0.0) FROM Booking b")
+    Double calculateTotalRevenue();
 }

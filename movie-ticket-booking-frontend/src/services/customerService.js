@@ -1,7 +1,13 @@
 import apiClient from '../api/axios';
 
 export const customerService = {
-  // GET /customers
+  // GET /customer/profile (customer own profile)
+  getProfile: async () => {
+    const response = await apiClient.get('/customer/profile');
+    return response.data;
+  },
+
+  // GET /customers (admin only)
   getAllCustomers: async () => {
     const response = await apiClient.get('/customers');
     return response.data;
@@ -22,6 +28,12 @@ export const customerService = {
   // PUT /customers/{id}
   updateCustomer: async (id, customerData) => {
     const response = await apiClient.put(`/customers/${id}`, customerData);
+    return response.data;
+  },
+
+  // PATCH /customers/{id}/status
+  updateCustomerStatus: async (id, active) => {
+    const response = await apiClient.patch(`/customers/${id}/status?active=${active}`);
     return response.data;
   },
 
